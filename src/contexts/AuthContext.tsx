@@ -1,20 +1,16 @@
 import {createContext, ReactNode, useState} from 'react';
 
-//import {api} from '../services/apiClient';
+import { api } from '../services/apiClient';
 
-import { destroyCookie } from 'nookies';
+import { destroyCookie, setCookie, parseCookies } from 'nookies';
 import Router from 'next/router';
-import axios, { AxiosInstance } from 'axios';
-
-const api = setupAPIClient();
 
 
 type AuthContextData = {
     user: UserProps;
     isAuthenticated: boolean;
     signIn: (credentials: SignInProps) => Promise<void>;
-    signOut: (ctx?: any) => AxiosInstance
-    
+    signOut: () => void;
 }
 
 type UserProps = {
@@ -47,22 +43,43 @@ export function AuthProvider({children}: AuthProviderProps){
     const [user, setUser]= useState<UserProps>()
     const isAuthenticated = !!user;
 
-    async function signIn({email, password}: SignInProps){
+    async function signIn({ email, password }: SignInProps){
         try{
-            const response = await api.post('/session', {
-                email,
-            })
-        }catch{
+          const response = await api.post('/session', {
+            email,
+            password
+          })
 
+          //console.log(response.data);
+
+          const { id, name, token} = response.data
+
+          setCookie(undefined, '@nexAuth.token', token, {
+            maxAge: 60 * 60 * 24 * 30 , // expirar em um mês
+            path: "/" // quais caminhos terao acesso ao cookie
+          })
+
+          setUser({
+            id, 
+            name, 
+            email,
+          })
+
+          //passar para proximas requisições o nosso token
+          api.defaults.headers['Authorization'] = `Besrer ${token}`
+
+          //redirecionar o user para /dashboard
+          Router.push('/dashboard')
+         
+        }catch(err){
+            console.log("ERRO AO ACESSAR ", err)
+          }
         }
-    }
-    return(
+    
+    
+        return(
         <AuthContext.Provider value={{user, isAuthenticated, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     )
-}
-
-function setupAPIClient() {
-    throw new Error('Function not implemented.');
 }
