@@ -86,7 +86,7 @@ export default function Dashboard({orders}: HomeProps){
 
     async function handleRefreshOrders(){
         const apiClient = setupAPIClient();
-        
+
         const response = await apiClient.get('/orders');
 
         setOrderList(response.data);
@@ -162,3 +162,4 @@ export const getServerSideProps = canSSRAuth(async (ctx) => {
 
     }
 })
+//teste do git
